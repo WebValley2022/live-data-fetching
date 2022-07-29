@@ -1,0 +1,2 @@
+flask
+git+https://gitlab.fbk.eu/franch/psycopg-wrapper.git@psycopg3-0.3.1#egg=psycopgwrapper

@@ -1,0 +1,8 @@
+{
+	auto_https disable_redirects
+	https_port 37558
+}
+
+webvalley2022.westeurope.cloudapp.azure.com:37558 {
+	reverse_proxy localhost:5000
+}
