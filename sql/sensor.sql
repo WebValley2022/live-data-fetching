@@ -1,10 +1,10 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
-
 DROP TABLE IF EXISTS node CASCADE;
+-- 
 CREATE TABLE IF NOT EXISTS node (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY
-    , node_name TEXT UNIQUE
-    , description text
+    , node_name TEXT UNIQUE -- appa1-gevo5
+    , description text -- Appa 1 - S. Chiara
     , active boolean NOT NULL DEFAULT TRUE
     , lat numeric(6 , 4) NOT NULL CHECK (lat <= 90 AND lat >= - 90)
     , lon numeric(7 , 4) NOT NULL CHECK (lon <= 180 AND lon >= - 180)
@@ -18,8 +18,8 @@ DROP TABLE IF EXISTS sensor CASCADE;
 CREATE TABLE IF NOT EXISTS sensor (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY
     , node_id INT NOT NULL REFERENCES node(id) ON UPDATE CASCADE ON DELETE CASCADE
-    , "name" text NOT NULL
-    , description text NOT NULL
+    , "name" text NOT NULL -- S1_ID
+    , description text NOT NULL -- SnO2_c_MH20_L2
     , active boolean NOT NULL DEFAULT TRUE
     , attrs jsonb NOT NULL DEFAULT '{}'::jsonb
     , UNIQUE(node_id, "name")
