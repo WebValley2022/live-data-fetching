@@ -2,6 +2,7 @@
 select
     n.node_name as node_name,
     n.description as node_description,
+    s.name as sensor_name,
     s.description as sensor_description,
     p.sensor_ts as ts,
     pd.r1 as signal_res,
@@ -29,6 +30,7 @@ order by p.sensor_ts;
 select
     n.node_name as node_name,
     n.description as node_description,
+    s.name as sensor_name,
     s.description as sensor_description,
     date_trunc('hour', p.sensor_ts) as ts,
     avg(pd.r1) as signal_res,
@@ -49,5 +51,5 @@ from packet_data pd
     left join packet p on p.id = pd.packet_id
     left join sensor s on s.id = pd.sensor_id
     left join node n on n.id = p.node_id
-group by date_trunc('hour', p.sensor_ts), n.node_name, n.description, s.description
+group by date_trunc('hour', p.sensor_ts), n.node_name, n.description, s.name, s.description
 order by date_trunc('hour', p.sensor_ts);
