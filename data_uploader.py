@@ -59,6 +59,15 @@ def format_dataframe(start_df: pd.DataFrame) -> pd.DataFrame:
     # replace n.d. values with -1 values
     start_df = start_df.replace("n.d.", -1)
 
+    # merge date and time
+    start_df["Data"] = start_df["Data"] + " " + start_df["Ora"]
+
+    # drop useless columns
+    start_df.drop(["Ora", "Unità di misura"], axis = 1, inplace = True)
+
+    # convert data 
+    start_df["Data"] = pd.to_datetime(start_df["Data"])
+
     return start_df
 
 def build_value_list(dataframe: pd.DataFrame) -> str:
@@ -71,19 +80,13 @@ def build_value_list(dataframe: pd.DataFrame) -> str:
     Returns:
         str: the string to be put as values
     """
-    output = ""
-    for _, row in dataframe.iterrows(): # _ is index
-        # convert date and time in a single object
-        timestamp = datetime.strptime(
-            row['Data'] + ' ' + row['Ora'],
-            "%Y-%m-%d %H"
+    str_fmt = "('{Stazione}', '{Inquinante}', '{Data}', {Valore})".format
+    return ", ".join(
+            dataframe.apply(
+            lambda x: str_fmt(**x),
+            1
         )
-    
-        output += f", ('{row['Stazione']}', '{row['Inquinante']}', '{timestamp.isoformat(' ')}', {row['Valore']})"
-        # timestamp is in ISO format (YYYY-MM-DD) + (HH:MM:SS.mmmmmm) with a space as separator
-    output = output[1:] # remove first ',' to prevent errors
-
-    return output
+    )
 
 def execute_insert(cur, insert_data: str) -> None: # cur type should be sql.cursor but gives error
     """
