@@ -1,4 +1,4 @@
--- Get all values
+-- Get all values - Every 10 secods
 select
     n.node_name as node_name,
     n.description as node_description,
@@ -25,16 +25,29 @@ from packet_data pd
 order by p.sensor_ts;
 
 
--- Group by minute, unable to average json values
-select n.node_name,
-    s.description,
-    date_trunc('minute', p.sensor_ts) as ts,
-    avg(pd.r1) as r1,
-    avg(pd.r2) as r2,
-    avg(pd.volt) as volt
+-- Get all values - Average on 1 hour
+select
+    n.node_name as node_name,
+    n.description as node_description,
+    s.description as sensor_description,
+    date_trunc('hour', p.sensor_ts) as ts,
+    avg(pd.r1) as signal_res,
+    avg(pd.r2) as heater_res,
+    avg(pd.volt) as volt,
+    avg((p.attrs::json->>'G')::numeric) as g,
+    avg((p.attrs::json->>'H')::numeric) as h,
+    avg((p.attrs::json->>'P')::numeric) as p,
+    avg((p.attrs::json->>'T')::numeric) as t,
+    avg((p.attrs::json->>'RH')::numeric) as rh,
+    avg((p.attrs::json->>'TH')::numeric) as th,
+    avg((p.attrs::json->>'CFG')::numeric) as cfg,
+    avg((p.attrs::json->>'CO2')::numeric) as co2,
+    avg((p.attrs::json->>'IAQ')::numeric) as iaq,
+    avg((p.attrs::json->>'VOC')::numeric) as voc,
+    avg((p.attrs::json->>'IAC_comp')::numeric) as iac_comp
 from packet_data pd
     left join packet p on p.id = pd.packet_id
     left join sensor s on s.id = pd.sensor_id
     left join node n on n.id = p.node_id
-group by date_trunc('minute', p.sensor_ts), n.node_name,s.description
-order by date_trunc('minute', p.sensor_ts);
+group by date_trunc('hour', p.sensor_ts), n.node_name, n.description, s.description
+order by date_trunc('hour', p.sensor_ts);
