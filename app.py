@@ -39,14 +39,16 @@ def add_sensor_data():
     sensor_ids = pg.fetchall("select id, name from sensor where node_id = %s", [node_id])
     
     for sensor_id, sensor_name in sensor_ids:
-        # e.g. sensor_id = 3
+        # e.g. sensor_id = 481
         # e.g. sensor_name: S3_ID
+        # e.g. sensor_val: value 1 to 8
+        sensor_val = sensor_name[1]
         pg.upsert("packet_data", {
             "packet_id": packet_id,
             "sensor_id": sensor_id,
-            "r1": packet[f"S{sensor_id}_R1"],
-            "r2": packet[f"S{sensor_id}_R2"],
-            "volt": packet[f"S{sensor_id}_Voltage"],
+            "r1": packet[f"S{sensor_val}_R1"],
+            "r2": packet[f"S{sensor_val}_R2"],
+            "volt": packet[f"S{sensor_val}_Voltage"],
         }, ["packet_id", "sensor_id"])
 
     pg.close()
@@ -91,5 +93,4 @@ def add_node_info():
 
 
 if __name__ == '__main__':
-    # app.run(host='0.0.0.0', debug=True)
     serve(app, host="0.0.0.0", port=5000)
