@@ -7,13 +7,13 @@ import requests
 import io
 
 # flags
-DEBUG = False
+DEBUG = True
 
 # db constants data
 DB_ADDRESS  = "localhost"
-DB_NAME     = "postgres"
+DB_NAME     = "webvalley2022"
 DB_USER     = "postgres"
-DB_PASSWORD = "password_provvisoria"
+DB_PASSWORD = "postgres"
 
 # url data
 FORMAT    = "csv"
@@ -93,6 +93,7 @@ def execute_insert(cur, insert_data: str) -> None: # cur type should be sql.curs
         cur (sql.cursor): the cursor object where to make the operation
         insert_data (str): the data to insert
     """
+
     cur.execute(
         "INSERT INTO appa_data (" +
             "stazione, " +
@@ -207,5 +208,5 @@ def update_db(base_url: str) -> None:
 
 # script runtime
 if __name__ == "__main__":
-    #populate_db(appa_data_url)
-    update_db(appa_data_url)
+    populate_db(appa_data_url)
+    # update_db(appa_data_url)

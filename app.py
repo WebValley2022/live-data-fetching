@@ -34,7 +34,14 @@ def add_sensor_data():
     sensor_ts = datetime.fromtimestamp(packet["timestamp"] / 1000.0)
 
     # TODO: add attrs that do not "key.startswith("S") and key.endswith(("_R1", "_R2", "_Voltage"))"
-    attrs = json.dumps({})
+    attrs_dict = {
+        k: v
+        for k, v in packet.items()
+        if not k.startswith("S")
+        and not k.endswith(("_R1", "_R2", "_Voltage"))
+        and k not in ["timestamp", "node_id"]
+    }    
+    attrs = json.dumps(attrs_dict)
     packet_id = pg.fetchone("insert into packet(node_id, sensor_ts, attrs) values (%s, %s, %s) returning id", [node_id, sensor_ts, attrs])
     sensor_ids = pg.fetchall("select id, name from sensor where node_id = %s", [node_id])
     
@@ -53,7 +60,6 @@ def add_sensor_data():
 
     pg.close()
     logging.warning(f"{request.method} request for /sensordata {packet['node_id']}")
-
     return packet
 
 
@@ -77,7 +83,7 @@ def add_node_info():
         "node_name": content["node_id"],
         "lat": content["lat"],
         "lon": content["lon"],
-        "description": content["description"]
+        "description": content["description"] # TODO: check if it's correct, returns always SnO2_c_MH20_L2
     }, ["node_name"])
     node_id = pg.fetchone("select id from node where node_name=%s", [content["node_id"]])
     for key, val in content.items():
@@ -93,4 +99,4 @@ def add_node_info():
 
 
 if __name__ == '__main__':
-    serve(app, host="0.0.0.0", port=5000)
+    serve(app, host="0.0.0.0", port=5000) 
