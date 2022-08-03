@@ -1,9 +1,13 @@
 from datetime import date, datetime, timedelta
+from time import time
 
 import psycopg2 as sql
 import pandas as pd
 import requests
 import io
+
+# flags
+DEBUG = False
 
 # db constants data
 DB_ADDRESS  = "localhost"
@@ -18,6 +22,14 @@ appa_data_url = f"https://bollettino.appa.tn.it/aria/opendata/{FORMAT}"
 
 # DATABASE INITAL POPULATOR
 def populate_db(base_url: str) -> None:
+    """
+    Populates the db with all data it can find on appa's website
+
+    Args:
+        base_url (str): the starting url
+    """
+
+    if DEBUG: population_start = time()
 
     connection = sql.connect(
         database = DB_NAME,
@@ -34,6 +46,10 @@ def populate_db(base_url: str) -> None:
         date_end    = date.today() - timedelta(days = 90*(i + 1))
         date_string = date_end.strftime("%Y-%m-%d") + "," + date_start.strftime("%Y-%m-%d")
         temp_url = base_url + f"/{date_string}/{STATIONS}"
+
+        if DEBUG: 
+            print(f"fetching data segment: {date_string}")
+            fetch_start = time()
 
         # get the data
         raw_data = requests.get(temp_url).content
@@ -59,30 +75,38 @@ def populate_db(base_url: str) -> None:
         # replace n.d. values with -1 values
         temp_df = temp_df.replace("n.d.", -1)
 
+        insert_data = ""
         for index, row in temp_df.iterrows():
-            print(row)
-
             # convert date and time in a single object
             timestamp = datetime.strptime(
                 row['Data'] + ' ' + row['Ora'],
                 "%Y-%m-%d %H"
             )
     
-            cur.execute(
-                "INSERT INTO appa_data (" +
-                        "stazione, " +
-                        "inquinante, " +
-                        "ts, " +
-                        "valore" +
-                    ") VALUES (" +
-                        f"'{row['Stazione']}', " +          # station name
-                        f"'{row['Inquinante']}', " +        # pollutant name
-                        f"'{timestamp.isoformat(' ')}', " + # timestamp in ISO format (YYYY-MM-DD) + (HH:MM:SS.mmmmmm) with a space as separator
-                        f"{row['Valore']}" +                # value
-                    ") ON CONFLICT DO NOTHING"              # ignore the insert if the key (stazione, inquinante, ts) already exists
-            )
-    
+            insert_data += f", ('{row['Stazione']}', '{row['Inquinante']}', '{timestamp.isoformat(' ')}', {row['Valore']})"
+            # timestamp is in ISO format (YYYY-MM-DD) + (HH:MM:SS.mmmmmm) with a space as separator
+        insert_data = insert_data[1:] # remove first ',' to prevent errors
+
+        if DEBUG:
+            time_delta = time() - fetch_start
+            print(f"fetch finished ({time_delta // 60}m {time_delta % 60}s)")
+
+        cur.execute(
+            "INSERT INTO appa_data (" +
+                    "stazione, " +
+                    "inquinante, " +
+                    "ts, " +
+                    "valore" +
+                ") VALUES " +
+                    insert_data +
+                " ON CONFLICT DO NOTHING" # ignore the insert if the key (stazione, inquinante, ts) already exists
+        )
+
     connection.commit()
     connection.close()
+    
+    if DEBUG:
+        time_delta = time() - population_start
+        print(f"finished ({time_delta // 60}m {time_delta % 60}s)")
 
 populate_db(appa_data_url)
