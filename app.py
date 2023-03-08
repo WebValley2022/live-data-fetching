@@ -43,8 +43,8 @@ def add_sensor_data():
     }    
     attrs = json.dumps(attrs_dict)
     packet_id = pg.fetchone("insert into packet(node_id, sensor_ts, attrs) values (%s, %s, %s) returning id", [node_id, sensor_ts, attrs])
-    sensor_ids = pg.fetchall("select id, name from sensor where node_id = %s", [node_id])
-    
+    sensor_ids = pg.fetchall("select id, name from sensor where node_id = %s and active", [node_id])
+
     for sensor_id, sensor_name in sensor_ids:
         # e.g. sensor_id = 481
         # e.g. sensor_name: S3_ID
@@ -75,7 +75,9 @@ def add_node_info():
          'S1_ID': 'SnO2_c_MH20_L2', 'S2_ID': 'LaFeO3_1-2021_MH17_L2',
          'S3_ID': 'WO3_1-2021_MH17_L5', 'S4_ID': 'WO3_1-2021_MH17_L5',
          'S5_ID': 'ZnOR_2018_MH17_L2', 'S6_ID': 'ZnOR_2018_MH17_L2',
-         'S7_ID': 'SmFeO3_1-2021_MH20_L2', 'S8_ID': 'STN_2018_MH20_L2'}
+         'S7_ID': 'SmFeO3_1-2021_MH20_L2', 'S8_ID': 'STN_2018_MH20_L2',
+         'attrs' : {}
+         }
     else:
         content = request.json
 
@@ -92,11 +94,68 @@ def add_node_info():
                 "node_id": node_id,
                 "name": key,
                 "description": val,
-            }, ["node_id", "name"])
+                "active": "true",
+                "attrs": json.dumps(content["attrs"])
+            }, ["node_id", "name","active"])
     pg.close()
     logging.warning(f"{request.method} request for /nodeinfo {content['node_id']}")
     return content
 
 
+@app.route('/insertsensors', methods=['GET', 'POST'])
+def update_sensor_info():
+    pg = PG.get_default_postgres()
+
+    # Get request for debugging
+    if request.method == 'GET':
+        logging.warning("Debug: GET request")
+        content = {'node_id': 'appa1-debug',
+        'S1_ID': 'prova1', 'S2_ID': 'prova2',
+        'S3_ID': 'prova3', 'S4_ID': 'prova4',
+        'S5_ID': 'prova5', 'S6_ID': 'prova6',
+        'S7_ID': 'prova7', 'S8_ID': 'prova8',
+        'attrs':{}
+        }
+    else:
+        content = request.json
+
+    node_id = pg.fetchone("select id from node where node_name=%s", [content["node_id"]])
+    
+    sensor_keys = []
+    
+    for key, _ in content.items():
+        if key.startswith("S") and key.endswith("_ID"):
+            sensor_keys.append(key)
+    
+    sensor_keys_str = ', '.join(f"'{w}'" for w in sensor_keys)
+    
+    sensor_ids = pg.fetchall(f"select id from sensor where node_id = {node_id} and active and name in ({sensor_keys_str})")
+    
+    
+    for id in sensor_ids:
+        id=id[0]
+        pg.update_where(table_name="sensor", 
+                        set=[("active",None)],
+                        where=[("id", "=",id)]  
+        )
+    
+    
+    content["attrs"]["active since"] = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+        
+    for key, val in content.items():
+        if key.startswith("S") and key.endswith("_ID"):
+            pg.insert("sensor", {
+                "node_id": node_id,
+                "name": key,
+                "description": val,
+                "active" : "true",
+                "attrs" : json.dumps(content["attrs"])
+            })
+    pg.close()
+    logging.warning(f"{request.method} request for /insertsensors {content['node_id']}")
+    return content
+
+
+
 if __name__ == '__main__':
-    serve(app, host="0.0.0.0", port=5000) 
+    serve(app, host="0.0.0.0", port=37558) 
