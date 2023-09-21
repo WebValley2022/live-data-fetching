@@ -1,5 +1,6 @@
 import requests
-from datetime import datetime
+import pytz
+from datetime import datetime, timezone
 from datetime import date
 import psycopg2 
 import time
@@ -76,7 +77,12 @@ def populate_db(conn):
     
     curr = conn.cursor()
    
-    
+    pollutants = {
+        'Via Bolzano': {
+            'CO': 677,
+        }
+    }
+    stations_format = ["Via Bolzano"]
     for station in stations_format:
         for pollutant, datastream in pollutants[station].items():
             start_date = date(2018,1,1)
@@ -109,14 +115,19 @@ def populate_db(conn):
                 if not skip:
                     list_values = []
                     for values in r_dict.get('value')[0].get('dataArray'):
-                        list_values.append((station, pollutant, values[0].split('/')[1],values[1]))
+                       # Stringa di esempio
+                        string = values[0].split('/')[1]
+                        
+                        list_values.append((station, pollutant, string,values[1]))
+                        #valore_pollutant = values[1]
                         
                     values = str(list_values).replace('[','').replace(']','')
                     
                     INSERT = f"""
                         INSERT INTO public.appa_data(
                             stazione, inquinante, ts, valore)
-                        VALUES {values} ON CONFLICT DO NOTHING;
+                        VALUES {values} ON CONFLICT (stazione, inquinante, ts) DO UPDATE
+                            SET valore = EXCLUDED.valore;
                     """
                     try:
                         curr.execute(INSERT)
@@ -129,11 +140,7 @@ def populate_db(conn):
                 
                 start_date = start_date.replace(year= start_date.year + 1)
                 
-                
-
-
-                
-                
+                               
 def getting_data(conn):
     curr = conn.cursor()
     payload = {
@@ -161,14 +168,17 @@ def getting_data(conn):
                     if not skip:
                         list_values = []
                         for values in r_dict.get('value')[0].get('dataArray'):
-                            list_values.append((station, pollutant, values[0].split('/')[1],values[1]))
+                            # Stringa di esempio
+                            string = values[0].split('/')[1]
+                            
+                            list_values.append((station, pollutant, string, values[1]))
                             
                         values = str(list_values).replace('[','').replace(']','')
                         
                         INSERT = f"""
                             INSERT INTO public.appa_data(
                                 stazione, inquinante, ts, valore)
-                            VALUES {values} ON CONFLICT DO NOTHING;
+                            VALUES {values} ON CONFLICT ;
                         """
                         try:
                             curr.execute(INSERT)
@@ -189,12 +199,16 @@ def getting_data(conn):
             
             
 def main():
+    aa= 1688654597717 / 1000.0
+    
+    print(datetime.utcfromtimestamp(aa))
+    print(datetime.fromtimestamp(aa))
     exit_key = True
     while(exit_key):
         menu = input("""
                      1- delete table appa
                      2- create table appa
-                     3- populate db from 2018
+                     3- populate db since 2018
                      4- get appa data in real time
                      5- use acronyms as pollutants name
                      Q- quit
