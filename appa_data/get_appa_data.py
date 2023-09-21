@@ -172,7 +172,7 @@ def getting_data(conn):
                         INSERT = f"""
                             INSERT INTO public.appa_data(
                                 stazione, inquinante, ts, valore)
-                            VALUES {values} ON CONFLICT ;
+                            VALUES {values} ON CONFLICT DO NOTHING;
                         """
                         try:
                             curr.execute(INSERT)
