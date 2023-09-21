@@ -77,12 +77,6 @@ def populate_db(conn):
     
     curr = conn.cursor()
    
-    pollutants = {
-        'Via Bolzano': {
-            'CO': 677,
-        }
-    }
-    stations_format = ["Via Bolzano"]
     for station in stations_format:
         for pollutant, datastream in pollutants[station].items():
             start_date = date(2018,1,1)
