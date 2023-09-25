@@ -182,6 +182,8 @@ def getting_data(conn):
                             conn.rollback()
                             curr.close()
                         print(f"Inquinante {pollutant} in {station} done")
+                        
+            print(f"Acquisition time: {datetime.now()}")
             time.sleep(21600) # 6 hours
             #time.sleep(15)
     except KeyboardInterrupt:
