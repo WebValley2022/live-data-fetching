@@ -151,7 +151,11 @@ def getting_data(conn):
                 for pollutant, datastream in pollutants[station].items():
                     skip = False
                     r = requests.get(get_url(datastream), params=payload)
-                    r_dict = r.json()
+                    try:
+                        r_dict = r.json()
+                    except:
+                        skip=True
+                        print(f'ERROR on: {r}')
                     
                     try:
                        size = len(r_dict.get('value')[0].get('dataArray'))
