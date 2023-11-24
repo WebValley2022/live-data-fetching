@@ -39,10 +39,10 @@ def add_sensor_data():
         for k, v in packet.items()
         if not k.startswith("S")
         and not k.endswith(("_R1", "_R2", "_Voltage"))
-        and k not in ["timestamp", "node_id"]
+        and k not in ["timestamp", "node_id",'P','T','RH']
     }    
     attrs = json.dumps(attrs_dict)
-    packet_id = pg.fetchone("insert into packet(node_id, sensor_ts, attrs) values (%s, %s, %s) returning id", [node_id, sensor_ts, attrs])
+    packet_id = pg.fetchone("insert into packet(node_id, sensor_ts, attrs) values (%s, %s, %s, %s, %s, %s) returning id", [node_id, sensor_ts, attrs, packet['P'], packet['T'], packet['RH']])
     sensor_ids = pg.fetchall("select id, name from sensor where node_id = %s and active", [node_id])
 
     for sensor_id, sensor_name in sensor_ids:
